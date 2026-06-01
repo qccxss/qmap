@@ -102,14 +102,14 @@ Executes a single command and exits.
 ### Examples
 
 ```
-qmap.exe scan 192.168.1.0/24
-qmap.exe ping 8.8.8.8 10
-qmap.exe port 192.168.1.1 1-1024
-qmap.exe port 192.168.1.1 443
-qmap.exe dns example.com
-qmap.exe trace example.com
-qmap.exe whois example.com
-qmap.exe net
+qmap.exe | scan 192.168.1.0/24
+qmap.exe | ping 8.8.8.8 10
+qmap.exe | port 192.168.1.1 1-1024
+qmap.exe | port 192.168.1.1 443
+qmap.exe | dns example.com
+qmap.exe | trace example.com
+qmap.exe | whois example.com
+qmap.exe | net
 ```
 
 ---
