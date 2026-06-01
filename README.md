@@ -13,7 +13,7 @@
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.8-512BD4?style=flat-square)
 ![Language](https://img.shields.io/badge/language-C%23-239120?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-white?style=flat-square)
-![Version](https://img.shields.io/badge/version-0.0.1-black?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.0.2-black?style=flat-square)
 
 </div>
 
