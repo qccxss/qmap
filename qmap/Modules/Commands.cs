@@ -157,7 +157,12 @@ namespace qmap_v1.Modules
                 {
                     var result = tcp.BeginConnect(host, port, null, null);
                     bool connected = result.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(600));
-                    if (connected) { tcp.EndConnect(result); return true; }
+                    if (connected)
+                    {
+                        try { tcp.EndConnect(result); }
+                        catch { return false; }
+                        return tcp.Connected;
+                    }
                     return false;
                 }
             }
@@ -235,12 +240,13 @@ namespace qmap_v1.Modules
                     try
                     {
                         var reply = ping.Send(host, timeout, new byte[32], options);
-                        string addr = reply.Address?.ToString() ?? "*";
+                        string addr = (reply.Address != null) ? reply.Address.ToString() : "*";
                         string rtt  = reply.RoundtripTime > 0 ? reply.RoundtripTime + " ms" : "*";
                         Renderer.TableRow(ttl.ToString(), addr, rtt);
 
                         if (reply.Status == IPStatus.Success) break;
                     }
+                    catch (PingException) { Renderer.TableRow(ttl.ToString(), "*", "request timed out"); }
                     catch { Renderer.TableRow(ttl.ToString(), "*", "*"); }
                 }
             }
@@ -286,12 +292,13 @@ namespace qmap_v1.Modules
             using (var tcp = new TcpClient(server, 43))
             using (var stream = tcp.GetStream())
             {
+                stream.ReadTimeout  = 5000;
+                stream.WriteTimeout = 3000;
                 byte[] data = System.Text.Encoding.ASCII.GetBytes(domain + "\r\n");
                 stream.Write(data, 0, data.Length);
-                var buffer = new byte[4096];
+                var buffer = new byte[8192];
                 var sb     = new System.Text.StringBuilder();
                 int read;
-                stream.ReadTimeout = 4000;
                 while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
                     sb.Append(System.Text.Encoding.ASCII.GetString(buffer, 0, read));
                 return sb.ToString();
@@ -312,7 +319,8 @@ namespace qmap_v1.Modules
                 Renderer.Row("Interface", iface.Name);
                 Renderer.Row("Type",      iface.NetworkInterfaceType.ToString());
                 Renderer.Row("MAC",       iface.GetPhysicalAddress().ToString());
-                Renderer.Row("Speed",     (iface.Speed / 1_000_000) + " Mbps");
+                string speed = iface.Speed > 0 ? (iface.Speed / 1_000_000) + " Mbps" : "unknown";
+                Renderer.Row("Speed", speed);
 
                 var props = iface.GetIPProperties();
                 foreach (var ua in props.UnicastAddresses)
