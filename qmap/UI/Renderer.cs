@@ -114,7 +114,7 @@ namespace qmap_v1.UI
 
     internal static class Meta
     {
-        public const string Version = "v0.0.1";
-        public const string Tagline = "Advanced Network Mapping";
+        public const string Version = "v0.0.2";
+        public const string Tagline = "Advanced Open Source Network Mapping Tool";
     }
 }
