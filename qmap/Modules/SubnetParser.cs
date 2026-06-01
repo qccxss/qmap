@@ -14,11 +14,16 @@ namespace qmap_v1.Modules
             if (!int.TryParse(parts[1], out int prefix) || prefix < 0 || prefix > 32) return null;
 
             uint ip   = ToUint(baseAddr);
-            uint mask = prefix == 0 ? 0 : (0xFFFFFFFFu << (32 - prefix));
+            uint mask = prefix == 0 ? 0u : prefix == 32 ? 0xFFFFFFFFu : (0xFFFFFFFFu << (32 - prefix));
             uint net  = ip & mask;
             uint brd  = net | ~mask;
 
             var list = new List<string>();
+            if (prefix == 32)
+            {
+                list.Add(FromUint(ip));
+                return list;
+            }
             for (uint addr = net + 1; addr < brd; addr++)
                 list.Add(FromUint(addr));
             return list;
