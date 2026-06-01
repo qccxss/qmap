@@ -93,8 +93,8 @@ namespace qmap_v1.UI
 
         private static void DrawTagline(int top, int width)
         {
-            string version  = "v0.0.1";
-            string tagline  = "Advanced Network Mapping";
+            string version  = "v0.0.2";
+            string tagline  = "Advanced Open Source Network Mapping Tool";
             string divider  = new string('─', Math.Min(tagline.Length + 4, width - 4));
 
             Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -118,8 +118,9 @@ namespace qmap_v1.UI
             {
                 "Initializing engine",
                 "Loading modules",
+                "Loading commands",
                 "Binding interfaces",
-                "Ready",
+                "Welcome to qmap",
             };
 
             int totalTicks = barWidth;
