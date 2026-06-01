@@ -28,7 +28,9 @@ namespace qmap_v1.Core
 
             if (args != null && args.Length > 0)
             {
-                Dispatch(args);
+                string joined = string.Join(" ", args);
+                string[] parts = CommandParser.Parse(joined);
+                Dispatch(parts);
                 return;
             }
 
