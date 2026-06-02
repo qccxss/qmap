@@ -16,6 +16,8 @@ namespace qmap_v1.Core
             { "trace",   new TraceCommand()   },
             { "whois",   new WhoisCommand()   },
             { "net",     new NetInfoCommand() },
+            { "clear",   new ClearCommand()   },
+            { "version", new VersionCommand() },
             { "help",    new HelpCommand()    },
         };
 
@@ -55,6 +57,8 @@ namespace qmap_v1.Core
 
         private static void Dispatch(string[] parts)
         {
+            if (parts == null || parts.Length == 0 || parts[0].Length == 0) return;
+
             string cmd = parts[0];
             string[] cmdArgs = parts.Length > 1
                 ? ArraySlice(parts, 1)
