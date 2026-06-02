@@ -1,3 +1,5 @@
+<div align="center">
+
 ```
         ██████╗ ███╗   ███╗ █████╗ ██████╗ 
        ██╔═══██╗████╗ ████║██╔══██╗██╔══██╗
@@ -13,7 +15,7 @@
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.8-512BD4?style=flat-square)
 ![Language](https://img.shields.io/badge/language-C%23-239120?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-white?style=flat-square)
-![Version](https://img.shields.io/badge/version-0.0.2-black?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.0.3-black?style=flat-square)
 
 </div>
 
@@ -29,8 +31,8 @@
 
 - ★ Animated loading screen with ASCII art logo and progress bar
 - ★ Interactive REPL shell with inline command support
-- ★ Parallel host discovery via ICMP ping sweep
-- ★ TCP port scanning with common service identification
+- ★ Parallel host discovery via ICMP ping sweep with optional full-range output
+- ★ TCP port scanning with service identification and range validation
 - ★ DNS resolution, traceroute, and WHOIS lookup
 - ★ Local network interface enumeration
 - ★ Structured, readable black-and-white console output
@@ -87,29 +89,32 @@ Executes a single command and exits.
 
 ## Commands
 
-| Command | Syntax                      | Description                              |
-|---------|-----------------------------|------------------------------------------|
-| `scan`  | `scan <subnet>`             | Discover live hosts on a CIDR subnet     |
-| `ping`  | `ping <host> [count]`       | ICMP ping with optional repeat count     |
-| `port`  | `port <host> [range\|port]` | TCP port scan — range or single port     |
-| `dns`   | `dns <host>`                | Resolve IPv4, IPv6, and aliases          |
-| `trace` | `trace <host>`              | Traceroute up to 30 hops                 |
-| `whois` | `whois <domain>`            | WHOIS query via `whois.iana.org`         |
-| `net`   | `net`                       | List local network interfaces            |
-| `help`  | `help`                      | Display all commands                     |
-| `exit`  | `exit`                      | Quit qmap                                |
+| Command   | Syntax                       | Description                              |
+|-----------|------------------------------|------------------------------------------|
+| `scan`    | `scan <subnet> [-a]`         | Discover live hosts (-a shows all)       |
+| `ping`    | `ping <host> [count]`        | ICMP ping with optional repeat count     |
+| `port`    | `port <host> [range\|port]`  | TCP port scan — range or single port     |
+| `dns`     | `dns <host>`                 | Resolve IPv4, IPv6, and aliases          |
+| `trace`   | `trace <host>`               | Traceroute up to 30 hops                 |
+| `whois`   | `whois <domain>`             | WHOIS query via `whois.iana.org`         |
+| `net`     | `net`                        | List local network interfaces            |
+| `version` | `version`                    | Show version info                        |
+| `clear`   | `clear`                      | Clear the screen                         |
+| `help`    | `help`                       | Display all commands                     |
+| `exit`    | `exit`                       | Quit qmap                                |
 
 ### Examples
 
 ```
-qmap.exe | scan 192.168.1.0/24
-qmap.exe | ping 8.8.8.8 10
-qmap.exe | port 192.168.1.1 1-1024
-qmap.exe | port 192.168.1.1 443
-qmap.exe | dns example.com
-qmap.exe | trace example.com
-qmap.exe | whois example.com
-qmap.exe | net
+qmap.exe scan 192.168.1.0/24
+qmap.exe scan 192.168.1.0/24 -a
+qmap.exe ping 8.8.8.8 10
+qmap.exe port 192.168.1.1 1-1024
+qmap.exe port 192.168.1.1 443
+qmap.exe dns example.com
+qmap.exe trace example.com
+qmap.exe whois example.com
+qmap.exe net
 ```
 
 ---
@@ -127,7 +132,7 @@ qmap/
 │   └── Shell.cs             REPL loop and command dispatcher
 │
 ├── Modules/
-│   ├── Commands.cs          scan, ping, port, dns, trace, whois, net, help
+│   ├── Commands.cs          scan, ping, port, dns, trace, whois, net, version, clear, help
 │   └── SubnetParser.cs      CIDR notation to IP list expander
 │
 └── UI/
@@ -140,7 +145,21 @@ qmap/
 ## Technical Notes
 
 - `scan` and `port` use `Parallel.ForEach` with a configurable `MaxDegreeOfParallelism` for speed.
+- `scan -a` includes unreachable hosts in output, marked as `DOWN`.
+- `port` validates port bounds (1–65535) and enforces start ≤ end on ranges.
 - `whois` connects directly to `whois.iana.org` on TCP port 43 — no third-party libraries.
 - `trace` uses `PingOptions.Ttl` incremented per hop to simulate traceroute.
 - ICMP operations may require Administrator privileges depending on Windows configuration.
-- Built against C# 7.3 for full .NET Framework 4.8 compatibility — no language features required.
+- Built against C# 7.3 for full .NET Framework 4.8 compatibility.
+
+---
+
+## License
+
+MIT License — free to use, modify, and distribute.
+
+---
+
+<div align="center">
+  <sub>✦ &nbsp; qmap v0.0.3 &nbsp; ✦</sub>
+</div>
