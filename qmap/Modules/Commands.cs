@@ -14,13 +14,15 @@ namespace qmap_v1.Modules
     {
         public void Execute(string[] args)
         {
-            if (args.Length == 0) { Renderer.Error("Usage: scan <subnet>  e.g. scan 192.168.1.0/24"); return; }
+            if (args.Length == 0) { Renderer.Error("Usage: scan <subnet> [-a]  e.g. scan 192.168.1.0/24"); return; }
 
-            string target = args[0];
+            string target  = args[0];
+            bool showAll   = args.Length > 1 && string.Equals(args[1], "-a", StringComparison.OrdinalIgnoreCase);
+
             var hosts = SubnetParser.Expand(target);
             if (hosts == null) { Renderer.Error("Invalid subnet format. Use CIDR notation: 192.168.1.0/24"); return; }
 
-            Renderer.Section($"Host Discovery  ─  {target}");
+            Renderer.Section($"Host Discovery  ─  {target}{(showAll ? "  [all]" : "")}");
             Renderer.TableHeader("IP Address", "Status", "Hostname", "RTT");
 
             int alive = 0;
@@ -33,15 +35,21 @@ namespace qmap_v1.Modules
                     try
                     {
                         var reply = ping.Send(ip, 800);
-                        if (reply != null && reply.Status == IPStatus.Success)
+                        bool up   = reply != null && reply.Status == IPStatus.Success;
+                        if (up)
                         {
                             string host = ResolveHost(ip);
                             Interlocked.Increment(ref alive);
                             lock (consoleLock)
                                 Renderer.TableRow(ip, "UP", host, reply.RoundtripTime + " ms");
                         }
+                        else if (showAll)
+                        {
+                            lock (consoleLock)
+                                Renderer.TableRow(ip, "DOWN", "—", "—");
+                        }
                     }
-                    catch { }
+                    catch { if (showAll) lock (consoleLock) Renderer.TableRow(ip, "DOWN", "—", "—"); }
                 }
             });
 
@@ -75,11 +83,13 @@ namespace qmap_v1.Modules
                     try
                     {
                         var reply = ping.Send(host, 3000);
+                        if (reply == null) { Renderer.Row($"seq={i + 1}", "no response"); continue; }
                         if (reply.Status == IPStatus.Success)
                         {
                             success++;
                             total += reply.RoundtripTime;
-                            Renderer.Row($"seq={i + 1}", $"{reply.Address}  rtt={reply.RoundtripTime} ms  ttl={reply.Options?.Ttl}");
+                            string ttl = (reply.Options != null) ? reply.Options.Ttl.ToString() : "—";
+                            Renderer.Row($"seq={i + 1}", $"{reply.Address}  rtt={reply.RoundtripTime} ms  ttl={ttl}");
                         }
                         else
                         {
@@ -114,16 +124,18 @@ namespace qmap_v1.Modules
             if (args.Length > 1)
             {
                 var parts = args[1].Split('-');
-                if (parts.Length == 2 && int.TryParse(parts[0], out int s) && int.TryParse(parts[1], out int e))
+                if (parts.Length == 2
+                    && int.TryParse(parts[0], out int s) && int.TryParse(parts[1], out int e)
+                    && s >= 1 && e <= 65535 && s <= e)
                 {
                     var list = new List<int>();
                     for (int p = s; p <= e; p++) list.Add(p);
                     ports = list.ToArray();
                 }
-                else if (int.TryParse(args[1], out int single))
+                else if (int.TryParse(args[1], out int single) && single >= 1 && single <= 65535)
                     ports = new[] { single };
                 else
-                    { Renderer.Error("Invalid port specification."); return; }
+                    { Renderer.Error("Invalid port specification. Use a number (1-65535) or range e.g. 1-1024"); return; }
             }
             else
                 ports = _commonPorts;
@@ -318,7 +330,8 @@ namespace qmap_v1.Modules
 
                 Renderer.Row("Interface", iface.Name);
                 Renderer.Row("Type",      iface.NetworkInterfaceType.ToString());
-                Renderer.Row("MAC",       iface.GetPhysicalAddress().ToString());
+                string mac = iface.GetPhysicalAddress().ToString();
+                Renderer.Row("MAC", mac.Length > 0 ? mac : "—");
                 string speed = iface.Speed > 0 ? (iface.Speed / 1_000_000) + " Mbps" : "unknown";
                 Renderer.Row("Speed", speed);
 
@@ -342,21 +355,46 @@ namespace qmap_v1.Modules
         }
     }
 
+    internal sealed class ClearCommand : ICommand
+    {
+        public void Execute(string[] args)
+        {
+            Console.Clear();
+            Renderer.Header();
+            Renderer.Blank();
+        }
+    }
+
+    internal sealed class VersionCommand : ICommand
+    {
+        public void Execute(string[] args)
+        {
+            Renderer.Section("Version Info");
+            Renderer.Row("qmap",      Meta.Version);
+            Renderer.Row("Runtime",   ".NET Framework 4.8");
+            Renderer.Row("Language",  "C# 7.3");
+            Renderer.Row("Platform",  "Windows");
+            Renderer.SectionEnd();
+        }
+    }
+
     internal sealed class HelpCommand : ICommand
     {
         public void Execute(string[] args)
         {
             Renderer.Section("Available Commands");
             Renderer.TableHeader("Command", "Usage", "Description");
-            Renderer.TableRow("scan",  "scan <subnet>",         "Discover live hosts on a subnet");
-            Renderer.TableRow("ping",  "ping <host> [count]",   "ICMP ping a host");
-            Renderer.TableRow("port",  "port <host> [range]",   "Scan ports on a host");
-            Renderer.TableRow("dns",   "dns <host>",            "Resolve DNS records");
-            Renderer.TableRow("trace", "trace <host>",          "Traceroute to a host");
-            Renderer.TableRow("whois", "whois <domain>",        "WHOIS lookup");
-            Renderer.TableRow("net",   "net",                   "List local network interfaces");
-            Renderer.TableRow("help",  "help",                  "Show this help");
-            Renderer.TableRow("exit",  "exit",                  "Quit qmap");
+            Renderer.TableRow("scan",    "scan <subnet> [-a]",    "Discover live hosts (-a shows all)");
+            Renderer.TableRow("ping",    "ping <host> [count]",   "ICMP ping a host");
+            Renderer.TableRow("port",    "port <host> [range]",   "Scan ports on a host");
+            Renderer.TableRow("dns",     "dns <host>",            "Resolve DNS records");
+            Renderer.TableRow("trace",   "trace <host>",          "Traceroute to a host");
+            Renderer.TableRow("whois",   "whois <domain>",        "WHOIS lookup");
+            Renderer.TableRow("net",     "net",                   "List local network interfaces");
+            Renderer.TableRow("version", "version",               "Show version info");
+            Renderer.TableRow("clear",   "clear",                 "Clear the screen");
+            Renderer.TableRow("help",    "help",                  "Show this help");
+            Renderer.TableRow("exit",    "exit",                  "Quit qmap");
             Renderer.SectionEnd();
         }
     }
