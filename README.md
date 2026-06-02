@@ -153,13 +153,6 @@ qmap/
 - Built against C# 7.3 for full .NET Framework 4.8 compatibility.
 
 ---
-
-## License
-
-MIT License — free to use, modify, and distribute.
-
----
-
 <div align="center">
   <sub>✦ &nbsp; qmap v0.0.3 &nbsp; ✦</sub>
 </div>
